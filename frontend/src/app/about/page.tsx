@@ -1,142 +1,128 @@
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 export default function About() {
   return (
-    <main className="min-h-screen bg-gray-100">
+    <div className="flex flex-col min-h-screen bg-slate-950 text-slate-100">
+      <Navbar />
 
-      {/* Navbar */}
-      <nav className="flex items-center justify-between px-10 py-5 bg-blue-900 text-white shadow-md">
-        <h1 className="text-2xl font-bold">BidReady AI</h1>
-
-        <div className="space-x-6">
-          <Link href="/" className="hover:text-yellow-300">
-            Home
-          </Link>
-
-          <Link href="/dashboard" className="hover:text-yellow-300">
-            Dashboard
-          </Link>
-
-          <Link href="/upload" className="hover:text-yellow-300">
-            Upload
-          </Link>
-
-          <Link href="/about" className="text-yellow-300 font-semibold">
-            About
-          </Link>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <section className="text-center py-16 px-6">
-        <h1 className="text-5xl font-bold text-blue-900 mb-6">
-          About BidReady AI
-        </h1>
-
-        <p className="max-w-3xl mx-auto text-lg text-gray-700">
-          BidReady AI is an AI-powered tender analysis platform designed to
-          simplify the bid preparation process. It helps organizations upload
-          tender documents, extract requirements, analyze content using AI,
-          and generate structured reports for faster and smarter decision
-          making.
-        </p>
-      </section>
-
-      {/* Mission */}
-      <section className="max-w-6xl mx-auto px-6 py-10">
-        <h2 className="text-3xl font-bold text-blue-900 mb-8 text-center">
-          Our Mission
-        </h2>
-
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <p className="text-gray-700 leading-8">
-            Our mission is to make tender analysis easier, faster, and more
-            accurate using Artificial Intelligence. By reducing manual work,
-            organizations can focus on preparing stronger proposals and
-            improving their chances of winning bids.
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        {/* Header Hero */}
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <span className="text-xs font-bold text-blue-400 uppercase tracking-widest bg-blue-950/60 border border-blue-800/40 px-3 py-1 rounded-full">
+            IBM Internship Capstone Project
+          </span>
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mt-4">
+            About BidReady AI
+          </h1>
+          <p className="mt-4 text-base sm:text-lg text-slate-300 leading-relaxed">
+            BidReady AI is an enterprise-grade AI-powered tender analysis platform designed to streamline bid proposal workflows, reduce manual clause checking, and maximize proposal win rates.
           </p>
         </div>
-      </section>
 
-      {/* Features */}
-      <section className="max-w-6xl mx-auto py-10 px-6">
-
-        <h2 className="text-3xl font-bold text-center text-blue-900 mb-10">
-          Why Choose BidReady AI?
-        </h2>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-          <div className="bg-white p-6 rounded-xl shadow-lg text-center">
-            <div className="text-5xl mb-4">🤖</div>
-            <h3 className="font-bold text-xl mb-2">AI Powered</h3>
-            <p>Advanced AI extracts important information quickly.</p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-lg text-center">
-            <div className="text-5xl mb-4">⚡</div>
-            <h3 className="font-bold text-xl mb-2">Fast Processing</h3>
-            <p>Analyze large tender documents within seconds.</p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-lg text-center">
-            <div className="text-5xl mb-4">🔒</div>
-            <h3 className="font-bold text-xl mb-2">Secure</h3>
-            <p>Your uploaded documents remain protected.</p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-lg text-center">
-            <div className="text-5xl mb-4">📊</div>
-            <h3 className="font-bold text-xl mb-2">Smart Reports</h3>
-            <p>Generate professional reports for bid preparation.</p>
-          </div>
-
+        {/* Mission Card */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 sm:p-10 shadow-2xl mb-16">
+          <h2 className="text-2xl font-bold text-white mb-4">Our Core Mission</h2>
+          <p className="text-slate-300 leading-relaxed text-sm sm:text-base">
+            Preparing proposals for government and enterprise tenders often involves reading hundreds of pages of dense specifications, strict compliance checklists, and risk-heavy legal contracts. BidReady AI harnesses modern Natural Language Processing and Generative AI to automate requirement extraction, cross-reference compliance criteria, and deliver streaming interactive assistance.
+          </p>
         </div>
 
-      </section>
+        {/* Value Pillars Grid */}
+        <div className="mb-16">
+          <h2 className="text-2xl font-bold text-white text-center mb-10">
+            Why BidReady AI?
+          </h2>
 
-      {/* Team */}
-      <section className="py-16 bg-white mt-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center text-3xl mx-auto mb-4">
+                🤖
+              </div>
+              <h3 className="font-bold text-lg text-white mb-2">AI-Driven Insights</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Automated clause parsing pinpoints critical requirements instantly.
+              </p>
+            </div>
 
-        <h2 className="text-3xl font-bold text-center text-blue-900 mb-10">
-          Project Team
-        </h2>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-3xl mx-auto mb-4">
+                ⚡
+              </div>
+              <h3 className="font-bold text-lg text-white mb-2">Rapid Review</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Process 100+ page RFP documents in seconds rather than hours.
+              </p>
+            </div>
 
-        <div className="flex justify-center">
-          <div className="bg-gray-100 rounded-xl shadow-lg p-8 w-96 text-center">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-rose-600/20 text-rose-400 flex items-center justify-center text-3xl mx-auto mb-4">
+                🛡️
+              </div>
+              <h3 className="font-bold text-lg text-white mb-2">Risk Detection</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Highlight uncapped liability, strict SLAs, and missing certifications.
+              </p>
+            </div>
 
-            <div className="text-6xl mb-4">👨‍💻</div>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-purple-600/20 text-purple-400 flex items-center justify-center text-3xl mx-auto mb-4">
+                📊
+              </div>
+              <h3 className="font-bold text-lg text-white mb-2">Structured Reports</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Generate clean compliance matrices for team evaluation.
+              </p>
+            </div>
+          </div>
+        </div>
 
-            <h3 className="text-2xl font-bold">
-              IBM Internship Team
-            </h3>
+        {/* Tech Stack & Team */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+            <h3 className="text-xl font-bold text-white mb-4">Technology Architecture</h3>
+            <ul className="space-y-3 text-xs sm:text-sm text-slate-300">
+              <li className="flex items-center space-x-2">
+                <span className="text-blue-400">🔹</span>
+                <span><strong>Framework:</strong> Next.js (App Router) & React</span>
+              </li>
+              <li className="flex items-center space-x-2">
+                <span className="text-blue-400">🔹</span>
+                <span><strong>Type Safety:</strong> TypeScript</span>
+              </li>
+              <li className="flex items-center space-x-2">
+                <span className="text-blue-400">🔹</span>
+                <span><strong>Styling:</strong> Tailwind CSS</span>
+              </li>
+              <li className="flex items-center space-x-2">
+                <span className="text-blue-400">🔹</span>
+                <span><strong>UI Engineering:</strong> Member 1 Responsibilities</span>
+              </li>
+            </ul>
+          </div>
 
-            <p className="mt-3 text-gray-600">
-              Frontend • Backend • AI Development
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl text-center flex flex-col items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-3xl mb-4">
+              👨‍💻
+            </div>
+            <h3 className="text-xl font-bold text-white">IBM Internship Project</h3>
+            <p className="text-xs text-slate-400 mt-2 max-w-sm">
+              Built as part of the IBM AI & Full-Stack Development Internship initiative.
             </p>
-
+            <div className="mt-6">
+              <Link
+                href="/dashboard"
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all inline-block"
+              >
+                Go to Live App Dashboard →
+              </Link>
+            </div>
           </div>
         </div>
+      </main>
 
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-blue-900 text-white text-center py-8 mt-10">
-
-        <h2 className="text-2xl font-bold">
-          BidReady AI
-        </h2>
-
-        <p className="mt-3">
-          AI Powered Tender Analysis Platform
-        </p>
-
-        <p className="mt-5 text-gray-300">
-          © 2026 IBM Internship Project
-        </p>
-
-      </footer>
-
-    </main>
+      <Footer />
+    </div>
   );
 }
