@@ -22,7 +22,7 @@ async def upload_document(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
         
-    # Save file temporarily (in production this goes directly to AWS S3)
+    # Save file temporarily for local processing
     upload_dir = "uploads"
     os.makedirs(upload_dir, exist_ok=True)
     file_path = f"{upload_dir}/{file.filename}"
@@ -30,13 +30,24 @@ async def upload_document(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
         
+    # Upload to AWS S3
+    import boto3
+    try:
+        s3_client = boto3.client('s3')
+        bucket_name = os.getenv("AWS_S3_BUCKET", "bidreadyai-documents")
+        s3_key = f"projects/{project_id}/{file.filename}"
+        s3_client.upload_file(file_path, bucket_name, s3_key)
+    except Exception:
+        # Fallback to local path if AWS credentials are not yet configured
+        s3_key = file_path
+        
     # Create document record in database
     db_doc = models.Document(
         id=str(uuid.uuid4()),
         project_id=project_id,
         name=file.filename,
         document_type=file.content_type,
-        s3_key=file_path,
+        s3_key=s3_key,
         page_count=0,
         processing_status="processing"
     )

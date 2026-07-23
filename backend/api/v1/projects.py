@@ -33,3 +33,19 @@ def get_project(project_id: str, db: Session = Depends(get_db)):
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
+
+from typing import Optional
+
+@router.get("/{project_id}/requirements")
+def list_project_requirements(
+    project_id: str, 
+    category: Optional[str] = None, 
+    priority: Optional[str] = None, 
+    db: Session = Depends(get_db)
+):
+    query = db.query(models.Requirement).filter(models.Requirement.project_id == project_id)
+    if category:
+        query = query.filter(models.Requirement.category == category)
+    if priority:
+        query = query.filter(models.Requirement.priority == priority)
+    return query.all()
