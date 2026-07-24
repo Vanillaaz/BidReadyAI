@@ -27,13 +27,16 @@ export default function Requirements() {
 
   const [projectId, setProjectId] = useState<string | null>(null);
 
+  // Hardcoded to strictly use the live AWS Elastic Beanstalk backend
+  const API_BASE_URL = "http://bidready-backend-env.eba-rayatq56.us-east-1.elasticbeanstalk.com";
+
   const fetchRequirements = async () => {
     if (!projectId) {
       setLoading(false);
       return;
     }
     try {
-      let url = `http://localhost:8000/api/v1/projects/${projectId}/requirements`;
+      let url = `${API_BASE_URL}/api/v1/projects/${projectId}/requirements`;
       const params = new URLSearchParams();
       if (selectedCategory !== "All") params.append("category", selectedCategory);
       if (selectedPriority !== "All") params.append("priority", selectedPriority);
@@ -71,15 +74,14 @@ export default function Requirements() {
     setDraftingText("");
     setIsDrafting(true);
 
-    const eventSource = new EventSource(`http://localhost:8000/api/v1/requirements/${reqId}/draft/stream`);
+    const eventSource = new EventSource(`${API_BASE_URL}/api/v1/requirements/${reqId}/draft/stream`);
     let fullText = "";
 
     eventSource.onmessage = (event: MessageEvent) => {
       if (event.data === "[DONE]") {
         eventSource.close();
         setIsDrafting(false);
-        // Save final drafted content to database
-        fetch(`http://localhost:8000/api/v1/requirements/${reqId}/draft`, {
+        fetch(`${API_BASE_URL}/api/v1/requirements/${reqId}/draft`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ draft_content: fullText })
@@ -91,20 +93,24 @@ export default function Requirements() {
     };
 
     eventSource.onerror = () => {
-      // Connection closed after [DONE] or on network error
       eventSource.close();
       setIsDrafting(false);
+      fetch(`${API_BASE_URL}/api/v1/requirements/${reqId}/draft`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ draft_content: fullText })
+      }).then(() => fetchRequirements());
     };
   };
 
   const handleExportMarkdown = () => {
     if (!projectId) return alert("No active project found");
-    window.open(`http://localhost:8000/api/v1/projects/${projectId}/export`, "_blank");
+    window.open(`${API_BASE_URL}/api/v1/projects/${projectId}/export`, "_blank");
   };
 
   const handleExportCSV = () => {
     if (!projectId) return alert("No active project found");
-    window.open(`http://localhost:8000/api/v1/projects/${projectId}/export/csv`, "_blank");
+    window.open(`${API_BASE_URL}/api/v1/projects/${projectId}/export/csv`, "_blank");
   };
 
   return (
@@ -252,7 +258,6 @@ export default function Requirements() {
                         }}
                         className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-colors"
                       >
-
                         View & Draft
                       </button>
                     </td>

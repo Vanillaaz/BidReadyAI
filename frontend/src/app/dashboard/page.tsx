@@ -19,7 +19,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/projects/")
+    fetch("http://bidready-backend-env.eba-rayatq56.us-east-1.elasticbeanstalk.com/api/v1/projects/")
       .then((res) => res.json())
       .then((data) => {
         setProjects(data);

@@ -1,13 +1,11 @@
-FROM node:20-alpine
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install
-
-COPY . .
-
-# In local dev we use npm run dev. For production, we build and start.
-# This dockerfile is currently configured for dev usage via docker-compose overrides, 
-# but falls back to dev server here for simplicity in rapid prototyping.
-CMD ["npm", "run", "dev"]
+@"
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+    location / {
+        try_files `$uri `$uri.html `$uri/ /index.html;
+    }
+}
+"@ | Set-Content -Path nginx.conf -Encoding utf8

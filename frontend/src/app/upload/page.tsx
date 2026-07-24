@@ -46,7 +46,7 @@ export default function Upload() {
 
     try {
       // 1. Create a Project workspace on FastAPI backend
-      const projRes = await fetch("http://localhost:8000/api/v1/projects/", {
+      const projRes = await fetch("http://bidready-backend-env.eba-rayatq56.us-east-1.elasticbeanstalk.com/api/v1/projects/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -66,7 +66,7 @@ export default function Upload() {
       formData.append("project_id", projectData.id);
       formData.append("file", file);
 
-      const docRes = await fetch("http://localhost:8000/api/v1/documents/upload", {
+      const docRes = await fetch("http://bidready-backend-env.eba-rayatq56.us-east-1.elasticbeanstalk.com/api/v1/documents/upload", {
         method: "POST",
         body: formData
       });
