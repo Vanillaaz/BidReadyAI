@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     COGNITO_USER_POOL_ID: str = os.getenv("COGNITO_USER_POOL_ID", "dummy_pool_id")
     COGNITO_APP_CLIENT_ID: str = os.getenv("COGNITO_APP_CLIENT_ID", "dummy_client_id")
 
+    # LLM Settings (Gemini)
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini")
+
     class Config:
         env_file = ".env"
 
