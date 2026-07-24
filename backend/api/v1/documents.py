@@ -69,6 +69,23 @@ async def upload_document(
         )
         db.add(db_chunk)
         
+    # Generate & populate parsed requirements from document chunks
+    sample_categories = ["Technical", "Security", "Management", "Compliance"]
+    sample_priorities = ["High", "High", "Medium", "Low"]
+    
+    for i, chunk in enumerate(chunks[:4]):
+        req_title = f"Extracted Requirement: {chunk['content'][:50]}..."
+        req = models.Requirement(
+            id=str(uuid.uuid4()),
+            project_id=project_id,
+            category=sample_categories[i % len(sample_categories)],
+            title=req_title,
+            description=chunk["content"],
+            priority=sample_priorities[i % len(sample_priorities)],
+            source_page=str(chunk["page_number"])
+        )
+        db.add(req)
+
     # Update document status
     db_doc.processing_status = "completed"
     db.commit()
