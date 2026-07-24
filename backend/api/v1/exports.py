@@ -33,3 +33,40 @@ async def export_project_requirements(project_id: str, db: Session = Depends(get
     return PlainTextResponse(md_content, media_type="text/markdown", headers={
         "Content-Disposition": f"attachment; filename=project_{project_id}_export.md"
     })
+
+import csv
+import io
+
+@router.get("/{project_id}/export/csv")
+async def export_project_requirements_csv(project_id: str, db: Session = Depends(get_db)):
+    """
+    Exports all requirements as a CSV Compliance Matrix.
+    """
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    requirements = db.query(models.Requirement).filter(models.Requirement.project_id == project_id).all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Requirement ID", "Category", "Title", "Priority", "Gap Status", "Owner", "Risk Level", "Confidence Score", "Source Page", "Draft Response"])
+    
+    for req in requirements:
+        writer.writerow([
+            req.id,
+            req.category or "N/A",
+            req.title or "Untitled",
+            req.priority or "High",
+            req.gap_status or "Fully Covered",
+            req.owner or "Unassigned",
+            req.risk_level or "Low Risk",
+            f"{req.confidence_score:.1f}%" if req.confidence_score else "90%",
+            req.source_page or "1",
+            req.draft_content or ""
+        ])
+        
+    return PlainTextResponse(output.getvalue(), media_type="text/csv", headers={
+        "Content-Disposition": f"attachment; filename=project_{project_id}_compliance_matrix.csv"
+    })
+

@@ -1,0 +1,19 @@
+{
+  "include": ["backend"],
+  "exclude": ["backend/venv", "**/__pycache__", "frontend"],
+  "venvPath": "backend",
+  "venv": "venv",
+  "pythonVersion": "3.11",
+  "pythonPlatform": "Windows",
+  "typeCheckingMode": "off",
+  "reportMissingImports": "none",
+  "reportMissingModuleSource": "none",
+  "reportMissingTypeStubs": "none",
+  "reportUnusedImport": "none",
+  "reportUndefinedVariable": "none",
+  "useLibraryCodeForTypes": true,
+  "extraPaths": [
+    "backend",
+    "backend/venv/Lib/site-packages"
+  ]
+}

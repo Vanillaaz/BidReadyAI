@@ -8,8 +8,11 @@ from db.database import get_db
 from db import models
 from schemas import document as schemas
 from services.ingestion_service import process_document
+from services.gemini_service import extract_requirements_with_gemini
+from services.rag_service import search_document_chunks
 
 router = APIRouter()
+
 
 @router.post("/upload", response_model=schemas.DocumentResponse)
 async def upload_document(
@@ -69,22 +72,28 @@ async def upload_document(
         )
         db.add(db_chunk)
         
-    # Generate & populate parsed requirements from document chunks
-    sample_categories = ["Technical", "Security", "Management", "Compliance"]
-    sample_priorities = ["High", "High", "Medium", "Low"]
+    # Combine chunk texts for requirement extraction
+    full_doc_text = "\n".join([c["content"] for c in chunks])
     
-    for i, chunk in enumerate(chunks[:4]):
-        req_title = f"Extracted Requirement: {chunk['content'][:50]}..."
+    extracted_reqs = extract_requirements_with_gemini(full_doc_text)
+
+    
+    for r_item in extracted_reqs:
         req = models.Requirement(
             id=str(uuid.uuid4()),
             project_id=project_id,
-            category=sample_categories[i % len(sample_categories)],
-            title=req_title,
-            description=chunk["content"],
-            priority=sample_priorities[i % len(sample_priorities)],
-            source_page=str(chunk["page_number"])
+            category=r_item.get("category", "Technical"),
+            title=r_item.get("title", "Requirement"),
+            description=r_item.get("description", ""),
+            priority=r_item.get("priority", "High"),
+            gap_status=r_item.get("gap_status", "Fully Covered"),
+            owner=r_item.get("owner", "Unassigned"),
+            confidence_score=float(r_item.get("confidence_score", 90.0)),
+            risk_level=r_item.get("risk_level", "Low Risk"),
+            source_page=str(r_item.get("source_page", "1"))
         )
         db.add(req)
+
 
     # Update document status
     db_doc.processing_status = "completed"
@@ -92,8 +101,6 @@ async def upload_document(
     db.refresh(db_doc)
     
     return db_doc
-
-from services.rag_service import search_document_chunks
 
 @router.post("/{document_id}/search")
 async def search_document(

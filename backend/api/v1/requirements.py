@@ -8,28 +8,30 @@ import db.models as models
 
 router = APIRouter()
 
+from services.gemini_service import stream_draft_with_gemini
+from services.rag_service import search_document_chunks
+
 @router.get("/{requirement_id}/draft/stream")
-async def stream_draft(requirement_id: str):
+async def stream_draft(requirement_id: str, db: Session = Depends(get_db)):
     """
-    Streams a mock AI-generated draft back to the client using Server-Sent Events (SSE).
+    Streams AI-generated proposal draft back to the client using Server-Sent Events (SSE),
+    grounded in retrieved RAG vector context chunks and generated via Gemini or fallback AI.
     """
-    async def event_generator():
-        mock_response = (
-            "Based on the RFP requirements, this is a simulated AI draft. "
-            "In production, this endpoint will connect directly to Amazon Bedrock "
-            "and stream tokens in real-time as the Claude 3 model generates them. "
-            "We are yielding word by word to verify the frontend streaming architecture works! "
-            "End of draft."
-        )
-        words = mock_response.split(" ")
-        for word in words:
-            await asyncio.sleep(0.15)  # Simulate network latency of AI token generation
-            # SSE format requires "data: <content>\n\n"
-            yield f"data: {word} \n\n"
-            
-        yield "data: [DONE]\n\n"
-            
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    req = db.query(models.Requirement).filter(models.Requirement.id == requirement_id).first()
+    title = req.title if req else "RFP Compliance Draft"
+    desc = req.description if req else "General requirement statement."
+    
+    # Retrieve grounded chunks from project documents if requirement exists
+    context_chunks = []
+    if req:
+        chunks = db.query(models.DocumentChunk).limit(3).all()
+        context_chunks = [{"page_number": c.page_number, "content": c.content} for c in chunks]
+
+    return StreamingResponse(
+        stream_draft_with_gemini(title, desc, context_chunks),
+        media_type="text/event-stream"
+    )
+
 
 class DraftUpdateRequest(BaseModel):
     draft_content: str

@@ -162,10 +162,11 @@ export default function Dashboard() {
           </div>
 
           {projects.length === 0 && (
-            <div className="p-12 text-center text-slate-500">
-              {loading ? "Loading projects from backend..." : "No active project workspaces created yet. Go to Upload Tender to create one!"}
+            <div className="p-12 text-center text-slate-500 font-medium">
+              {loading ? "⌛ Loading project workspaces from backend..." : "No active project workspaces created yet. Click '+ Upload Tender' to create one!"}
             </div>
           )}
+
         </section>
       </main>
 

@@ -25,7 +25,7 @@ export default function Requirements() {
   const [draftingText, setDraftingText] = useState<string>("");
   const [isDrafting, setIsDrafting] = useState<boolean>(false);
 
-  const projectId = typeof window !== "undefined" ? localStorage.getItem("current_project_id") : null;
+  const [projectId, setProjectId] = useState<string | null>(null);
 
   const fetchRequirements = async () => {
     if (!projectId) {
@@ -52,8 +52,13 @@ export default function Requirements() {
   };
 
   useEffect(() => {
+    const stored = localStorage.getItem("current_project_id");
+    setProjectId(stored);
+  }, []);
+
+  useEffect(() => {
     fetchRequirements();
-  }, [selectedCategory, selectedPriority]);
+  }, [selectedCategory, selectedPriority, projectId]);
 
   const filteredRequirements = requirements.filter((item) => {
     const matchesSearch =
@@ -69,26 +74,37 @@ export default function Requirements() {
     const eventSource = new EventSource(`http://localhost:8000/api/v1/requirements/${reqId}/draft/stream`);
     let fullText = "";
 
-    eventSource.onmessage = (event) => {
-      fullText += event.data;
+    eventSource.onmessage = (event: MessageEvent) => {
+      if (event.data === "[DONE]") {
+        eventSource.close();
+        setIsDrafting(false);
+        // Save final drafted content to database
+        fetch(`http://localhost:8000/api/v1/requirements/${reqId}/draft`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ draft_content: fullText })
+        }).then(() => fetchRequirements());
+        return;
+      }
+      fullText += event.data + " ";
       setDraftingText(fullText);
     };
 
     eventSource.onerror = () => {
+      // Connection closed after [DONE] or on network error
       eventSource.close();
       setIsDrafting(false);
-      // Save drafted content back to database
-      fetch(`http://localhost:8000/api/v1/requirements/${reqId}/draft`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ draft_content: fullText })
-      }).then(() => fetchRequirements());
     };
   };
 
   const handleExportMarkdown = () => {
     if (!projectId) return alert("No active project found");
     window.open(`http://localhost:8000/api/v1/projects/${projectId}/export`, "_blank");
+  };
+
+  const handleExportCSV = () => {
+    if (!projectId) return alert("No active project found");
+    window.open(`http://localhost:8000/api/v1/projects/${projectId}/export/csv`, "_blank");
   };
 
   return (
@@ -112,12 +128,21 @@ export default function Requirements() {
 
           <div className="flex items-center space-x-3">
             <button
+              onClick={handleExportCSV}
+              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-sm font-semibold rounded-xl transition-colors flex items-center space-x-1.5"
+            >
+              <span>📊</span>
+              <span>Export CSV Matrix</span>
+            </button>
+
+            <button
               onClick={handleExportMarkdown}
               className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-sm font-semibold rounded-xl transition-colors flex items-center space-x-1.5"
             >
               <span>📥</span>
               <span>Export Markdown</span>
             </button>
+
             <Link
               href="/chat"
               className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl shadow-md transition-all flex items-center space-x-1.5"
@@ -222,10 +247,12 @@ export default function Requirements() {
                       <button
                         onClick={() => {
                           setActiveRequirement(item);
-                          setDraftingText(item.draft_content || "");
+                          const isLegacyPlaceholder = item.draft_content?.includes("simulated AI draft") || item.draft_content?.includes("Amazon Bedrock");
+                          setDraftingText(isLegacyPlaceholder ? "" : (item.draft_content || ""));
                         }}
                         className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-colors"
                       >
+
                         View & Draft
                       </button>
                     </td>

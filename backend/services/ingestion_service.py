@@ -1,16 +1,31 @@
-import fitz  # PyMuPDF
 import uuid
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 
 def process_document(document_id: str, file_path: str):
     """
     Extracts text from a PDF, chunks it, and creates embeddings.
     """
-    # 1. Extract text from PDF using PyMuPDF
-    doc = fitz.open(file_path)
+    # 1. Extract text from PDF using pypdf or PyMuPDF
     text = ""
-    for page in doc:
-        text += page.get_text()
+    try:
+        from pypdf import PdfReader
+        reader = PdfReader(file_path)
+        for page in reader.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
+    except Exception:
+        try:
+            import fitz
+            doc = fitz.open(file_path)
+            for page in doc:
+                text += page.get_text() + "\n"
+        except Exception:
+            # Fallback text reading
+            with open(file_path, "r", errors="ignore") as f:
+                text = f.read()
+
         
     # 2. Chunk text using LangChain
     text_splitter = RecursiveCharacterTextSplitter(

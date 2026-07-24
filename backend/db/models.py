@@ -11,6 +11,9 @@ class Project(Base):
     client_name = Column(String)
     deadline = Column(DateTime(timezone=True))
     status = Column(String, default="active")
+    compliance_score = Column(Float, default=0.0)
+    total_requirements = Column(Float, default=0.0)
+    high_risk_gaps = Column(Float, default=0.0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     documents = relationship("Document", back_populates="project")
@@ -37,11 +40,17 @@ class Requirement(Base):
     title = Column(String)
     description = Column(Text)
     priority = Column(String)
+    gap_status = Column(String, default="Fully Covered")
+    owner = Column(String, default="Unassigned")
+    confidence_score = Column(Float, default=90.0)
+    risk_level = Column(String, default="Low Risk")
+    evidence_citations = Column(Text, nullable=True)
     draft_content = Column(Text, nullable=True)
     source_page = Column(String)
     status = Column(String, default="pending")
     
     project = relationship("Project", back_populates="requirements")
+
 
 class DocumentChunk(Base):
     __tablename__ = "document_chunks"

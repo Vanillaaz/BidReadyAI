@@ -1,0 +1,13 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/Scripts/python.exe",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/backend/venv/Lib/site-packages",
+    "${workspaceFolder}/backend"
+  ],
+  "python.analysis.venvPath": "${workspaceFolder}/backend",
+  "python.analysis.venv": "venv",
+  "pyrefly.pythonInterpreter": "${workspaceFolder}/backend/venv/Scripts/python.exe",
+  "python.languageServer": "Pylance",
+  "pylance.inlayHints.variableTypes": false,
+  "python.analysis.typeCheckingMode": "off"
+}

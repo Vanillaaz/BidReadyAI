@@ -76,11 +76,13 @@ export default function Upload() {
       setUploadProgress(100);
       setIsUploading(false);
       setIsCompleted(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || "An error occurred during file ingestion");
+      const errMsg = err instanceof Error ? err.message : "An error occurred during file ingestion";
+      setError(errMsg);
       setIsUploading(false);
     }
+
   };
 
   return (

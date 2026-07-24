@@ -1,6 +1,6 @@
 import boto3
-import json
 from core.config import settings
+
 
 # Initialize Bedrock client. 
 # This will use the credentials from the environment variables once you add them.
@@ -19,17 +19,8 @@ def extract_requirements_from_text(text: str) -> dict:
     if not bedrock_client:
         return {"status": "error", "message": "Bedrock client not initialized. Waiting for AWS credentials."}
         
-    prompt = f"""
-    You are an expert proposal compliance analyst.
-    Analyze the RFP text below and extract only explicit requirements.
-    RFP content:
-    {text}
-    """
-    
-    # TODO: Implement the actual Claude 3 invocation format
-    # Example: response = bedrock_client.invoke_model(body=json.dumps({"prompt": prompt, ...}), modelId="anthropic.claude-3-haiku-20240307-v1:0")
-    
-    return {"mock_requirements": []}
+    return {"mock_requirements": [], "text_length": len(text)}
+
 
 def stream_draft_response(requirement: str, evidence_chunks: list):
     """

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
+
 import uuid
 
 from db.database import get_db
@@ -33,8 +34,6 @@ def get_project(project_id: str, db: Session = Depends(get_db)):
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     return project
-
-from typing import Optional
 
 @router.get("/{project_id}/requirements")
 def list_project_requirements(
