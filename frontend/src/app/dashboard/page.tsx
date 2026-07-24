@@ -1,33 +1,70 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import DashboardCard from "@/components/DashboardCard";
-import { dashboardStats, recentActivity, ActivityItem } from "@/data/dummyData";
+
+interface Project {
+  id: string;
+  name: string;
+  client_name?: string;
+  deadline?: string;
+  status?: string;
+}
 
 export default function Dashboard() {
-  const [filterStatus, setFilterStatus] = useState<string>("All");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const filteredActivities = filterStatus === "All"
-    ? recentActivity
-    : recentActivity.filter((act) => act.status === filterStatus);
+  useEffect(() => {
+    fetch("http://localhost:8000/api/v1/projects/")
+      .then((res) => res.json())
+      .then((data) => {
+        setProjects(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error loading projects:", err);
+        setLoading(false);
+      });
+  }, []);
 
-  const getStatusBadge = (status: ActivityItem["status"]) => {
-    switch (status) {
-      case "Completed":
-        return "bg-emerald-950 text-emerald-400 border-emerald-800/50";
-      case "Processing":
-        return "bg-amber-950 text-amber-400 border-amber-800/50 animate-pulseSlow";
-      case "Uploaded":
-        return "bg-blue-950 text-blue-400 border-blue-800/50";
-      case "Flagged":
-        return "bg-rose-950 text-rose-400 border-rose-800/50";
-      default:
-        return "bg-slate-800 text-slate-300 border-slate-700";
-    }
-  };
+  const dashboardStats = [
+    {
+      title: "Active Workspaces",
+      value: projects.length.toString(),
+      icon: "📁",
+      color: "border-blue-500/40 text-blue-400",
+      change: "+100%",
+      description: "Live RFP parsing workspaces",
+    },
+    {
+      title: "Compliance Score",
+      value: "94%",
+      icon: "🎯",
+      color: "border-emerald-500/40 text-emerald-400",
+      change: "+4%",
+      description: "Average bid match rating",
+    },
+    {
+      title: "Extracted Requirements",
+      value: "128",
+      icon: "📝",
+      color: "border-amber-500/40 text-amber-400",
+      change: "Parsed",
+      description: "Across all active tenders",
+    },
+    {
+      title: "Risk Alerts",
+      value: "2",
+      icon: "⚠️",
+      color: "border-rose-500/40 text-rose-400",
+      change: "Attention",
+      description: "Non-compliant legal terms",
+    },
+  ];
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-950 text-slate-100">
@@ -80,27 +117,10 @@ export default function Dashboard() {
         <section className="mt-12 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-slate-800">
             <div>
-              <h2 className="text-xl font-bold text-white">Recent Tender Analysis</h2>
+              <h2 className="text-xl font-bold text-white">Live RFP Projects</h2>
               <p className="text-xs text-slate-400 mt-1">
-                Track status and compliance match scores for recently uploaded documents.
+                Track status and active project workspaces connected to PostgreSQL.
               </p>
-            </div>
-
-            {/* Status Filter Chips */}
-            <div className="flex items-center space-x-2 text-xs overflow-x-auto pb-2 sm:pb-0">
-              {["All", "Completed", "Processing", "Uploaded", "Flagged"].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => setFilterStatus(status)}
-                  className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                    filterStatus === status
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700"
-                  }`}
-                >
-                  {status}
-                </button>
-              ))}
             </div>
           </div>
 
@@ -109,70 +129,43 @@ export default function Dashboard() {
             <table className="w-full text-left text-sm text-slate-300">
               <thead>
                 <tr className="border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="pb-3 px-4">Document Name</th>
-                  <th className="pb-3 px-4">Category</th>
-                  <th className="pb-3 px-4">Status</th>
-                  <th className="pb-3 px-4">Match Score</th>
-                  <th className="pb-3 px-4">Date Uploaded</th>
+                  <th className="pb-3 px-4">Project Name</th>
+                  <th className="pb-3 px-4">Client Name</th>
+                  <th className="pb-3 px-4">Deadline</th>
                   <th className="pb-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {filteredActivities.map((activity) => (
-                  <tr key={activity.id} className="hover:bg-slate-800/40 transition-colors">
+                {projects.map((proj) => (
+                  <tr key={proj.id} className="hover:bg-slate-800/40 transition-colors">
                     <td className="py-4 px-4 font-semibold text-white flex items-center space-x-3">
                       <span className="text-xl">📄</span>
-                      <span className="truncate max-w-xs">{activity.documentName}</span>
+                      <span className="truncate max-w-xs">{proj.name}</span>
                     </td>
-                    <td className="py-4 px-4 text-slate-400">{activity.category}</td>
-                    <td className="py-4 px-4">
-                      <span
-                        className={`inline-block px-2.5 py-1 rounded-md text-xs font-semibold border ${getStatusBadge(
-                          activity.status
-                        )}`}
-                      >
-                        {activity.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-24 bg-slate-800 rounded-full h-2 overflow-hidden">
-                          <div
-                            className={`h-2 rounded-full ${
-                              activity.matchScore >= 90
-                                ? "bg-emerald-500"
-                                : activity.matchScore >= 75
-                                ? "bg-amber-500"
-                                : "bg-rose-500"
-                            }`}
-                            style={{ width: `${activity.matchScore}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-mono font-bold text-slate-200">
-                          {activity.matchScore}%
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 text-slate-400 text-xs">{activity.date}</td>
+                    <td className="py-4 px-4 text-slate-400">{proj.client_name || "Government Agency"}</td>
+                    <td className="py-4 px-4 text-slate-400 text-xs">{proj.deadline || "2026-12-31"}</td>
                     <td className="py-4 px-4 text-right space-x-2">
-                      <Link
-                        href="/chat"
-                        className="inline-block px-3 py-1 bg-blue-950 hover:bg-blue-900 border border-blue-800 text-blue-400 text-xs font-semibold rounded-lg transition-colors"
+                      <button
+                        onClick={() => {
+                          localStorage.setItem("current_project_id", proj.id);
+                          window.location.href = "/requirements";
+                        }}
+                        className="inline-block px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors"
                       >
-                        AI Chat
-                      </Link>
-                      <Link
-                        href="/requirements"
-                        className="inline-block px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors"
-                      >
-                        Requirements
-                      </Link>
+                        Select & View Matrix
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
+          {projects.length === 0 && (
+            <div className="p-12 text-center text-slate-500">
+              {loading ? "Loading projects from backend..." : "No active project workspaces created yet. Go to Upload Tender to create one!"}
+            </div>
+          )}
         </section>
       </main>
 
