@@ -1,5 +1,34 @@
 
+# ── Environment variables ────────────────────────────────────
 .env
 backend/.env
+frontend/.env
+frontend/.env.local
 
-backend/__pycache__/
+# ── Python cache & build artifacts ──────────────────────────
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+backend/venv/
+.venv/
+
+# ── AWS Elastic Beanstalk ────────────────────────────────────
+.elasticbeanstalk/logs/
+backend/.elasticbeanstalk/logs/
+backend/.elasticbeanstalk/app_versions/
+*.zip
+
+# ── Frontend build output ────────────────────────────────────
+frontend/.next/
+frontend/out/
+frontend/out.zip
+
+# ── Node modules ─────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+
+# ── Misc ─────────────────────────────────────────────────────
+.DS_Store
+*.log
