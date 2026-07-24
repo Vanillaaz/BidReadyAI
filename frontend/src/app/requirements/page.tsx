@@ -1,49 +1,94 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { requirementsData, RequirementItem } from "@/data/dummyData";
+
+interface Requirement {
+  id: string;
+  project_id: string;
+  title: string;
+  description: string;
+  category: string;
+  priority: string;
+  draft_content?: string;
+}
 
 export default function Requirements() {
+  const [requirements, setRequirements] = useState<Requirement[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [selectedStatus, setSelectedStatus] = useState<string>("All");
+  const [selectedPriority, setSelectedPriority] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [activeRequirement, setActiveRequirement] = useState<RequirementItem | null>(null);
+  const [activeRequirement, setActiveRequirement] = useState<Requirement | null>(null);
+  const [draftingText, setDraftingText] = useState<string>("");
+  const [isDrafting, setIsDrafting] = useState<boolean>(false);
 
-  const filteredRequirements = requirementsData.filter((item) => {
-    const matchesCategory =
-      selectedCategory === "All" || item.category === selectedCategory;
-    const matchesStatus =
-      selectedStatus === "All" || item.complianceStatus === selectedStatus;
-    const matchesSearch =
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.clause.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesStatus && matchesSearch;
-  });
+  const projectId = typeof window !== "undefined" ? localStorage.getItem("current_project_id") : null;
 
-  const getStatusBadge = (status: RequirementItem["complianceStatus"]) => {
-    switch (status) {
-      case "Compliant":
-        return "bg-emerald-950 text-emerald-400 border-emerald-800/50";
-      case "Needs Review":
-        return "bg-amber-950 text-amber-400 border-amber-800/50";
-      case "Non-Compliant":
-        return "bg-rose-950 text-rose-400 border-rose-800/50";
+  const fetchRequirements = async () => {
+    if (!projectId) {
+      setLoading(false);
+      return;
+    }
+    try {
+      let url = `http://localhost:8000/api/v1/projects/${projectId}/requirements`;
+      const params = new URLSearchParams();
+      if (selectedCategory !== "All") params.append("category", selectedCategory);
+      if (selectedPriority !== "All") params.append("priority", selectedPriority);
+      if (params.toString()) url += `?${params.toString()}`;
+
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setRequirements(data);
+      }
+    } catch (err) {
+      console.error("Error fetching requirements:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getRiskBadge = (risk: RequirementItem["riskLevel"]) => {
-    switch (risk) {
-      case "Low":
-        return "text-emerald-400";
-      case "Medium":
-        return "text-amber-400";
-      case "High":
-        return "text-rose-400 font-bold";
-    }
+  useEffect(() => {
+    fetchRequirements();
+  }, [selectedCategory, selectedPriority]);
+
+  const filteredRequirements = requirements.filter((item) => {
+    const matchesSearch =
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
+
+  const startStreamingDraft = (reqId: string) => {
+    setDraftingText("");
+    setIsDrafting(true);
+
+    const eventSource = new EventSource(`http://localhost:8000/api/v1/requirements/${reqId}/draft/stream`);
+    let fullText = "";
+
+    eventSource.onmessage = (event) => {
+      fullText += event.data;
+      setDraftingText(fullText);
+    };
+
+    eventSource.onerror = () => {
+      eventSource.close();
+      setIsDrafting(false);
+      // Save drafted content back to database
+      fetch(`http://localhost:8000/api/v1/requirements/${reqId}/draft`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ draft_content: fullText })
+      }).then(() => fetchRequirements());
+    };
+  };
+
+  const handleExportMarkdown = () => {
+    if (!projectId) return alert("No active project found");
+    window.open(`http://localhost:8000/api/v1/projects/${projectId}/export`, "_blank");
   };
 
   return (
@@ -61,17 +106,17 @@ export default function Requirements() {
               Tender Requirements Matrix
             </h1>
             <p className="text-slate-400 text-sm mt-1">
-              Parsed requirements for <span className="text-white font-medium">Smart_City_Infrastructure_RFP.pdf</span>
+              Extracted requirements for active project: <span className="text-white font-mono font-medium">{projectId || "None (Upload a PDF first)"}</span>
             </p>
           </div>
 
           <div className="flex items-center space-x-3">
             <button
-              onClick={() => alert("Exporting Requirements Matrix as CSV...")}
+              onClick={handleExportMarkdown}
               className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-sm font-semibold rounded-xl transition-colors flex items-center space-x-1.5"
             >
               <span>📥</span>
-              <span>Export CSV</span>
+              <span>Export Markdown</span>
             </button>
             <Link
               href="/chat"
@@ -89,13 +134,13 @@ export default function Requirements() {
             {/* Search Input */}
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">
-                Search Clauses
+                Search Requirements
               </label>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by title, clause or keyword..."
+                placeholder="Search by title or description..."
                 className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
@@ -112,26 +157,26 @@ export default function Requirements() {
               >
                 <option value="All">All Categories</option>
                 <option value="Technical">Technical</option>
-                <option value="Financial">Financial</option>
-                <option value="Legal">Legal</option>
+                <option value="Security">Security</option>
+                <option value="Management">Management</option>
                 <option value="Compliance">Compliance</option>
               </select>
             </div>
 
-            {/* Compliance Status Filter */}
+            {/* Priority Filter */}
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase mb-2">
-                Compliance Status
+                Priority
               </label>
               <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
+                value={selectedPriority}
+                onChange={(e) => setSelectedPriority(e.target.value)}
                 className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
               >
-                <option value="All">All Statuses</option>
-                <option value="Compliant">Compliant</option>
-                <option value="Needs Review">Needs Review</option>
-                <option value="Non-Compliant">Non-Compliant</option>
+                <option value="All">All Priorities</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
               </select>
             </div>
           </div>
@@ -143,21 +188,16 @@ export default function Requirements() {
             <table className="w-full text-left text-sm text-slate-300">
               <thead>
                 <tr className="bg-slate-950 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="py-4 px-4">Clause Ref</th>
-                  <th className="py-4 px-4">Requirement Title</th>
+                  <th className="py-4 px-4">Title</th>
                   <th className="py-4 px-4">Category</th>
-                  <th className="py-4 px-4">Compliance</th>
-                  <th className="py-4 px-4">Risk Level</th>
-                  <th className="py-4 px-4">Page</th>
-                  <th className="py-4 px-4 text-right">Details</th>
+                  <th className="py-4 px-4">Priority</th>
+                  <th className="py-4 px-4">Drafted Status</th>
+                  <th className="py-4 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
                 {filteredRequirements.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="py-4 px-4 font-mono text-xs text-blue-400 font-bold">
-                      {item.clause}
-                    </td>
                     <td className="py-4 px-4 font-semibold text-white">
                       {item.title}
                     </td>
@@ -166,29 +206,27 @@ export default function Requirements() {
                         {item.category}
                       </span>
                     </td>
-                    <td className="py-4 px-4">
-                      <span
-                        className={`inline-block px-2.5 py-1 rounded-md text-xs font-semibold border ${getStatusBadge(
-                          item.complianceStatus
-                        )}`}
-                      >
-                        {item.complianceStatus}
+                    <td className="py-4 px-4 font-semibold text-xs">
+                      <span className={item.priority === "High" ? "text-rose-400" : "text-amber-400"}>
+                        {item.priority}
                       </span>
                     </td>
-                    <td className="py-4 px-4">
-                      <span className={`text-xs font-semibold ${getRiskBadge(item.riskLevel)}`}>
-                        {item.riskLevel} Risk
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 text-xs text-slate-400 font-mono">
-                      p. {item.pageNumber}
+                    <td className="py-4 px-4 text-xs">
+                      {item.draft_content ? (
+                        <span className="text-emerald-400 font-semibold">✅ Draft Ready</span>
+                      ) : (
+                        <span className="text-slate-500">Not Drafted</span>
+                      )}
                     </td>
                     <td className="py-4 px-4 text-right">
                       <button
-                        onClick={() => setActiveRequirement(item)}
+                        onClick={() => {
+                          setActiveRequirement(item);
+                          setDraftingText(item.draft_content || "");
+                        }}
                         className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-colors"
                       >
-                        View
+                        View & Draft
                       </button>
                     </td>
                   </tr>
@@ -199,7 +237,7 @@ export default function Requirements() {
 
           {filteredRequirements.length === 0 && (
             <div className="p-12 text-center text-slate-500">
-              No matching requirements found for the selected filters.
+              {loading ? "Loading requirements from backend..." : "No requirements found for this project. Please upload a PDF first!"}
             </div>
           )}
         </div>
@@ -207,11 +245,11 @@ export default function Requirements() {
         {/* Modal Drawer for Selected Requirement */}
         {activeRequirement && (
           <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-fadeIn">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl animate-fadeIn max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                 <div>
                   <span className="text-xs font-mono font-bold text-blue-400">
-                    {activeRequirement.clause} • Page {activeRequirement.pageNumber}
+                    {activeRequirement.category} • {activeRequirement.priority} Priority
                   </span>
                   <h3 className="text-xl font-bold text-white mt-1">
                     {activeRequirement.title}
@@ -228,26 +266,34 @@ export default function Requirements() {
               <div className="space-y-4 text-sm">
                 <div>
                   <span className="text-xs text-slate-500 uppercase block font-semibold">
-                    Description
+                    Requirement Description
                   </span>
-                  <p className="text-slate-300 leading-relaxed mt-1">
+                  <p className="text-slate-300 leading-relaxed mt-1 bg-slate-950 p-3 rounded-xl border border-slate-800">
                     {activeRequirement.description}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-2">
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <span className="text-xs text-slate-500 block">Compliance</span>
-                    <span className="font-semibold text-white mt-1 block">
-                      {activeRequirement.complianceStatus}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-slate-500 uppercase block font-semibold">
+                      AI Proposal Draft (Live Streaming)
                     </span>
+                    <button
+                      onClick={() => startStreamingDraft(activeRequirement.id)}
+                      disabled={isDrafting}
+                      className="px-3 py-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg flex items-center space-x-1 shadow-md"
+                    >
+                      <span>⚡</span>
+                      <span>{isDrafting ? "Streaming..." : "Generate AI Response Draft"}</span>
+                    </button>
                   </div>
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <span className="text-xs text-slate-500 block">Risk Evaluation</span>
-                    <span className={`font-semibold mt-1 block ${getRiskBadge(activeRequirement.riskLevel)}`}>
-                      {activeRequirement.riskLevel} Risk
-                    </span>
-                  </div>
+                  <textarea
+                    value={draftingText}
+                    onChange={(e) => setDraftingText(e.target.value)}
+                    placeholder="Click 'Generate AI Response Draft' to watch Claude 3 stream the compliance text..."
+                    rows={8}
+                    className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-blue-500 font-mono leading-relaxed mt-1"
+                  />
                 </div>
               </div>
 
@@ -258,12 +304,6 @@ export default function Requirements() {
                 >
                   Close
                 </button>
-                <Link
-                  href="/chat"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl"
-                >
-                  Discuss with AI Chat
-                </Link>
               </div>
             </div>
           </div>

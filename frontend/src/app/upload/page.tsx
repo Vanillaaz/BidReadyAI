@@ -11,6 +11,7 @@ export default function Upload() {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -36,25 +37,50 @@ export default function Upload() {
     }
   };
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     setSelectedFile(file);
     setIsCompleted(false);
     setIsUploading(true);
-    setUploadProgress(10);
+    setError(null);
+    setUploadProgress(20);
 
-    // Simulate progress animation
-    let current = 10;
-    const timer = setInterval(() => {
-      current += 20;
-      if (current >= 100) {
-        setUploadProgress(100);
-        setIsUploading(false);
-        setIsCompleted(true);
-        clearInterval(timer);
-      } else {
-        setUploadProgress(current);
-      }
-    }, 300);
+    try {
+      // 1. Create a Project workspace on FastAPI backend
+      const projRes = await fetch("http://localhost:8000/api/v1/projects/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `RFP Project - ${file.name}`,
+          client_name: "Government Agency",
+          deadline: "2026-12-31"
+        })
+      });
+
+      if (!projRes.ok) throw new Error("Failed to create project workspace");
+      const projectData = await projRes.json();
+      localStorage.setItem("current_project_id", projectData.id);
+      setUploadProgress(50);
+
+      // 2. Upload Document to FastAPI Ingestion Pipeline
+      const formData = new FormData();
+      formData.append("project_id", projectData.id);
+      formData.append("file", file);
+
+      const docRes = await fetch("http://localhost:8000/api/v1/documents/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!docRes.ok) throw new Error("Failed to process and index document");
+      
+      setUploadProgress(100);
+      setIsUploading(false);
+      setIsCompleted(true);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "An error occurred during file ingestion");
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -109,6 +135,12 @@ export default function Upload() {
               />
             </label>
           </div>
+
+          {error && (
+            <div className="mt-4 p-4 bg-rose-950/80 border border-rose-800 text-rose-300 rounded-xl text-sm">
+              ❌ Error: {error}
+            </div>
+          )}
 
           {/* Progress / Selected File State */}
           {selectedFile && (
@@ -165,49 +197,6 @@ export default function Upload() {
               )}
             </div>
           )}
-        </div>
-
-        {/* Requirements & Guidelines */}
-        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-            <h3 className="text-base font-bold text-white mb-3">
-              Supported Formats
-            </h3>
-            <ul className="space-y-2 text-xs text-slate-400">
-              <li className="flex items-center space-x-2">
-                <span className="text-blue-400">✓</span>
-                <span>Portable Document Format (.pdf)</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <span className="text-blue-400">✓</span>
-                <span>Microsoft Word Documents (.doc, .docx)</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <span className="text-blue-400">✓</span>
-                <span>Plain Text (.txt)</span>
-              </li>
-            </ul>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-            <h3 className="text-base font-bold text-white mb-3">
-              Processing Guidelines
-            </h3>
-            <ul className="space-y-2 text-xs text-slate-400">
-              <li className="flex items-center space-x-2">
-                <span className="text-emerald-400">⚡</span>
-                <span>Extracts tables, clauses, and SLAs automatically</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <span className="text-emerald-400">🔒</span>
-                <span>End-to-end encrypted file parsing</span>
-              </li>
-              <li className="flex items-center space-x-2">
-                <span className="text-emerald-400">🎯</span>
-                <span>Generates instant compliance match score</span>
-              </li>
-            </ul>
-          </div>
         </div>
       </main>
 
