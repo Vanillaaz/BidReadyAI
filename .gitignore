@@ -32,3 +32,9 @@ frontend/node_modules/
 # ── Misc ─────────────────────────────────────────────────────
 .DS_Store
 *.log
+
+# Elastic Beanstalk build archives
+.elasticbeanstalk/app_versions/
+backend/.elasticbeanstalk/app_versions/
+frontend/.elasticbeanstalk/app_versions/
+*.zip
